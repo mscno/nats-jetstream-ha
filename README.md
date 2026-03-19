@@ -29,14 +29,15 @@ Environment variables:
 | `NATS_CLUSTER_LISTEN` | no | `0.0.0.0:6222` | Cluster route listener address |
 | `JETSTREAM_STORE_DIR` | no | `/data/jetstream` | JetStream file storage directory |
 | `CLUSTER_NAME` | no | `cluster` | Shared NATS cluster name |
-| `CLUSTER_ROUTES_SEED` | yes | none | Comma-separated route URLs for the other nodes |
+| `CLUSTER_ROUTES_SEED_PRIMARY` | yes | none | Route URL for one peer node |
+| `CLUSTER_ROUTES_SEED_SECONDARY` | yes | none | Route URL for the other peer node |
 
 Important:
 
 - Mount the volume at `/data`.
 - Keep `JETSTREAM_STORE_DIR` under that mount, for example `/data/jetstream`.
 - Do not share a single volume between nodes.
-- `CLUSTER_ROUTES_SEED` must contain valid route URLs only, such as `nats://host:6222`.
+- `CLUSTER_ROUTES_SEED_PRIMARY` and `CLUSTER_ROUTES_SEED_SECONDARY` must contain valid route URLs only, such as `nats://host:6222`.
 - Do not use malformed routes like `nats://nats-2:some-host:6222`. That form is invalid and can crash route startup.
 - These env vars intentionally cover the common deployment knobs only. Advanced NATS features should still go in a custom config if you need them.
 
@@ -71,7 +72,8 @@ NATS_HTTP_PORT=8222
 NATS_CLUSTER_LISTEN=0.0.0.0:6222
 CLUSTER_NAME=natscluster
 JETSTREAM_STORE_DIR=/data/jetstream
-CLUSTER_ROUTES_SEED=nats://${{nats-2.RAILWAY_PRIVATE_DOMAIN}}:6222,nats://${{nats-3.RAILWAY_PRIVATE_DOMAIN}}:6222
+CLUSTER_ROUTES_SEED_PRIMARY=nats://${{nats-2.RAILWAY_PRIVATE_DOMAIN}}:6222
+CLUSTER_ROUTES_SEED_SECONDARY=nats://${{nats-3.RAILWAY_PRIVATE_DOMAIN}}:6222
 ```
 
 ### `nats-2`
@@ -84,7 +86,8 @@ NATS_HTTP_PORT=8222
 NATS_CLUSTER_LISTEN=0.0.0.0:6222
 CLUSTER_NAME=natscluster
 JETSTREAM_STORE_DIR=/data/jetstream
-CLUSTER_ROUTES_SEED=nats://${{nats-1.RAILWAY_PRIVATE_DOMAIN}}:6222,nats://${{nats-3.RAILWAY_PRIVATE_DOMAIN}}:6222
+CLUSTER_ROUTES_SEED_PRIMARY=nats://${{nats-1.RAILWAY_PRIVATE_DOMAIN}}:6222
+CLUSTER_ROUTES_SEED_SECONDARY=nats://${{nats-3.RAILWAY_PRIVATE_DOMAIN}}:6222
 ```
 
 ### `nats-3`
@@ -97,7 +100,8 @@ NATS_HTTP_PORT=8222
 NATS_CLUSTER_LISTEN=0.0.0.0:6222
 CLUSTER_NAME=natscluster
 JETSTREAM_STORE_DIR=/data/jetstream
-CLUSTER_ROUTES_SEED=nats://${{nats-1.RAILWAY_PRIVATE_DOMAIN}}:6222,nats://${{nats-2.RAILWAY_PRIVATE_DOMAIN}}:6222
+CLUSTER_ROUTES_SEED_PRIMARY=nats://${{nats-1.RAILWAY_PRIVATE_DOMAIN}}:6222
+CLUSTER_ROUTES_SEED_SECONDARY=nats://${{nats-2.RAILWAY_PRIVATE_DOMAIN}}:6222
 ```
 
 Route syntax is the critical detail. Use:
@@ -181,7 +185,8 @@ docker run -d \
   -e NATS_CLUSTER_LISTEN=0.0.0.0:6222 \
   -e CLUSTER_NAME=natscluster \
   -e JETSTREAM_STORE_DIR=/data/jetstream \
-  -e CLUSTER_ROUTES_SEED='nats://nats-2:6222,nats://nats-3:6222' \
+  -e CLUSTER_ROUTES_SEED_PRIMARY='nats://nats-2:6222' \
+  -e CLUSTER_ROUTES_SEED_SECONDARY='nats://nats-3:6222' \
   ghcr.io/mscno/nats-jetstream-ha:latest
 ```
 
