@@ -1,4 +1,6 @@
-FROM nats:2.12.5
+FROM nats:2.12.5-alpine
+
+RUN apk add --no-cache openssl
 
 ENV NATS_HOST=0.0.0.0 \
     NATS_PORT=4222 \
