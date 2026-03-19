@@ -1,4 +1,4 @@
-FROM nats:2.12.5-alpine
+FROM nats:2.12.5
 
 ENV NATS_HOST=0.0.0.0 \
     NATS_PORT=4222 \
@@ -7,8 +7,9 @@ ENV NATS_HOST=0.0.0.0 \
     CLUSTER_NAME=cluster \
     JETSTREAM_STORE_DIR=/data/jetstream
 
-COPY --chmod=755 docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY nats-server.conf /etc/nats/nats-server.conf
 
 EXPOSE 4222 6222 8222
 
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+ENTRYPOINT ["/nats-server"]
+CMD ["--config", "/etc/nats/nats-server.conf"]

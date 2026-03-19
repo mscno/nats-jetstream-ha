@@ -8,7 +8,7 @@ Published image:
 ghcr.io/mscno/nats-jetstream-ha:latest
 ```
 
-The image wraps the official NATS image and renders a concrete `nats-server.conf` from environment variables at container startup.
+The image wraps the official NATS image and starts `nats-server` with the bundled config at `/etc/nats/nats-server.conf`.
 
 ## What The Container Expects
 
@@ -147,7 +147,7 @@ restartPolicyType = "ALWAYS"
 restartPolicyMaxRetries = 10
 ```
 
-The container already renders and starts its config automatically, so you do not need a custom start command unless you want to override it.
+The container already starts with the bundled config, so you do not need a custom start command unless you want to override it.
 
 ## Monitoring And Health
 
