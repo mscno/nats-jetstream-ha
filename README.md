@@ -30,8 +30,6 @@ Environment variables:
 | `NATS_CLUSTER_LISTEN` | no | `0.0.0.0:6222` | Cluster route listener address |
 | `NATS_CLUSTER_AUTH_USER` | yes | none | Username required for inter-node cluster routes |
 | `NATS_CLUSTER_AUTH_PASSWORD` | yes | none | Password required for inter-node cluster routes |
-| `NATS_TLS_CA_CERT_PEM` | no | none | Shared PEM-encoded CA certificate used to auto-enable TLS |
-| `NATS_TLS_CA_KEY_PEM` | no | none | Shared PEM-encoded CA private key used to mint per-node certificates |
 | `JETSTREAM_STORE_DIR` | no | `/data/jetstream` | JetStream file storage directory |
 | `CLUSTER_NAME` | no | `cluster` | Shared NATS cluster name |
 | `CLUSTER_ROUTES_SEED_PRIMARY` | yes | none | Route URL for one peer node |
@@ -44,13 +42,10 @@ Important:
 - Do not share a single volume between nodes.
 - `NATS_AUTH_TOKEN` must be the same on all nodes and on all clients that connect to the cluster.
 - `NATS_CLUSTER_AUTH_USER` and `NATS_CLUSTER_AUTH_PASSWORD` must be the same on all nodes.
-- If `NATS_TLS_CA_CERT_PEM` and `NATS_TLS_CA_KEY_PEM` are both set, the container auto-enables TLS for client traffic and mTLS for cluster routes.
-- In TLS mode, `RAILWAY_PRIVATE_DOMAIN` must be present so the node can mint a certificate for its own private hostname.
 - `CLUSTER_ROUTES_SEED_PRIMARY` and `CLUSTER_ROUTES_SEED_SECONDARY` must contain valid route URLs only, such as `nats://host:6222`.
 - Route URLs should include the cluster credentials, for example `nats://user:pass@host:6222`.
 - If the cluster password contains reserved URL characters, URL-encode it before placing it in a route URL.
 - Do not use malformed routes like `nats://nats-2:some-host:6222`. That form is invalid and can crash route startup.
-- Clients must trust the same CA certificate. For the `nats` CLI, that means using `tls://...` and `--tlsca <ca.pem>`.
 - These env vars intentionally cover the common deployment knobs only. Advanced NATS features should still go in a custom config if you need them.
 
 ## Railway Topology
@@ -85,8 +80,6 @@ NATS_AUTH_TOKEN=replace-with-shared-client-token
 NATS_CLUSTER_LISTEN=0.0.0.0:6222
 NATS_CLUSTER_AUTH_USER=cluster
 NATS_CLUSTER_AUTH_PASSWORD=replace-with-shared-cluster-password
-NATS_TLS_CA_CERT_PEM=replace-with-shared-ca-cert-pem
-NATS_TLS_CA_KEY_PEM=replace-with-shared-ca-key-pem
 CLUSTER_NAME=natscluster
 JETSTREAM_STORE_DIR=/data/jetstream
 CLUSTER_ROUTES_SEED_PRIMARY=nats://cluster:replace-with-shared-cluster-password@${{nats-2.RAILWAY_PRIVATE_DOMAIN}}:6222
@@ -104,8 +97,6 @@ NATS_AUTH_TOKEN=replace-with-shared-client-token
 NATS_CLUSTER_LISTEN=0.0.0.0:6222
 NATS_CLUSTER_AUTH_USER=cluster
 NATS_CLUSTER_AUTH_PASSWORD=replace-with-shared-cluster-password
-NATS_TLS_CA_CERT_PEM=${{nats-1.NATS_TLS_CA_CERT_PEM}}
-NATS_TLS_CA_KEY_PEM=${{nats-1.NATS_TLS_CA_KEY_PEM}}
 CLUSTER_NAME=natscluster
 JETSTREAM_STORE_DIR=/data/jetstream
 CLUSTER_ROUTES_SEED_PRIMARY=nats://cluster:replace-with-shared-cluster-password@${{nats-1.RAILWAY_PRIVATE_DOMAIN}}:6222
@@ -123,8 +114,6 @@ NATS_AUTH_TOKEN=replace-with-shared-client-token
 NATS_CLUSTER_LISTEN=0.0.0.0:6222
 NATS_CLUSTER_AUTH_USER=cluster
 NATS_CLUSTER_AUTH_PASSWORD=replace-with-shared-cluster-password
-NATS_TLS_CA_CERT_PEM=${{nats-1.NATS_TLS_CA_CERT_PEM}}
-NATS_TLS_CA_KEY_PEM=${{nats-1.NATS_TLS_CA_KEY_PEM}}
 CLUSTER_NAME=natscluster
 JETSTREAM_STORE_DIR=/data/jetstream
 CLUSTER_ROUTES_SEED_PRIMARY=nats://cluster:replace-with-shared-cluster-password@${{nats-1.RAILWAY_PRIVATE_DOMAIN}}:6222
@@ -175,24 +164,6 @@ Recommended exposure:
 - keep `6222` private
 - keep `8222` private unless you explicitly need remote monitoring
 
-## TLS Behavior
-
-If `NATS_TLS_CA_CERT_PEM` and `NATS_TLS_CA_KEY_PEM` are present, the container:
-
-- writes the shared CA to temp files
-- generates a per-node key and certificate at startup with SANs for `RAILWAY_PRIVATE_DOMAIN`, `SERVER_NAME`, `localhost`, and `127.0.0.1`
-- enables TLS on the client port `4222`
-- enables strict mTLS on the cluster route port `6222`
-- advertises the node using `RAILWAY_PRIVATE_DOMAIN`
-
-Route seed URLs stay in `nats://user:pass@host:6222` form. Client URLs should switch to `tls://token@host:4222`.
-
-Example `nats` CLI connect:
-
-```bash
-nats --server 'tls://replace-with-shared-client-token@${NATS_1_PRIVATE_DOMAIN}:4222,tls://replace-with-shared-client-token@${NATS_2_PRIVATE_DOMAIN}:4222,tls://replace-with-shared-client-token@${NATS_3_PRIVATE_DOMAIN}:4222' --tlsca ca.pem sub 'events.>'
-```
-
 ## Operational Notes
 
 - JetStream HA depends on stream and consumer replication, not only on running three servers.
@@ -231,8 +202,6 @@ docker run -d \
   -e NATS_CLUSTER_LISTEN=0.0.0.0:6222 \
   -e NATS_CLUSTER_AUTH_USER='cluster' \
   -e NATS_CLUSTER_AUTH_PASSWORD='replace-with-shared-cluster-password' \
-  -e NATS_TLS_CA_CERT_PEM='replace-with-shared-ca-cert-pem' \
-  -e NATS_TLS_CA_KEY_PEM='replace-with-shared-ca-key-pem' \
   -e CLUSTER_NAME=natscluster \
   -e JETSTREAM_STORE_DIR=/data/jetstream \
   -e CLUSTER_ROUTES_SEED_PRIMARY='nats://cluster:replace-with-shared-cluster-password@nats-2:6222' \
